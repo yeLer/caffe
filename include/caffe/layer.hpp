@@ -68,8 +68,8 @@ class Layer {
       const vector<Blob<Dtype>*>& top) {
     CheckBlobCounts(bottom, top); //检查输入和输出的blob数量是否正确
     LayerSetUp(bottom, top); //  具体执行子类中不同于父类的函数
-    Reshape(bottom, top);
-    SetLossWeights(top);
+    Reshape(bottom, top);  //负责对输入输出的存储维度进行更新
+    SetLossWeights(top);  //设置loss的权重系数，将所有位置的梯度乘以一个固定的系数，在这个层的参数loss_weight会有体现
   }
 
   /**
@@ -316,6 +316,7 @@ class Layer {
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
     // LOG(WARNING) << "Using CPU code as backup.";
+    // 工程技巧，执行gpu前向运算的基类中使用cpu执行前向，为了防止出现在没有gpu代码的时候不能进行代码调试的问题。
     return Forward_cpu(bottom, top);
   }
 
