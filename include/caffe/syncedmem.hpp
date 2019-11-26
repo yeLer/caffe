@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 
+// 如果包含intel开发的MKL线性代数库，将其包含在内
 #ifdef USE_MKL
   #include "mkl.h"
 #endif
@@ -51,20 +52,27 @@ inline void CaffeFreeHost(void* ptr, bool use_cuda) {
 /**
  * @brief Manages memory allocation and synchronization between the host (CPU)
  *        and device (GPU).
- *
+ * SyncedMemory类用于管理管理在CPU及GPU上的内存分配与同步。
  * TODO(dox): more thorough description.
  */
 class SyncedMemory {
  public:
-  SyncedMemory();
-  explicit SyncedMemory(size_t size);
-  ~SyncedMemory();
-  const void* cpu_data();
-  void set_cpu_data(void* data);
-  const void* gpu_data();
-  void set_gpu_data(void* data);
-  void* mutable_cpu_data();
-  void* mutable_gpu_data();
+  SyncedMemory(); // 无参的构造函数
+  explicit SyncedMemory(size_t size); // 带参的构造函数
+  ~SyncedMemory(); // 析构函数，如果有cpu数据，则释放对应的内存空间；如果有gpu数据，则释放对应的内存空间；
+  const void* cpu_data(); //以不可变方式获取cpu数据的指针
+  void set_cpu_data(void* data); //将cpu数据的指针指向data,并将数据的状态更改为HEAD_AT_CPU
+  const void* gpu_data();//以不可变方式获取gpu数据的指针
+  void set_gpu_data(void* data);//将gpu数据的指针指向data,并将数据的状态更改为HEAD_AT_GPU
+  void* mutable_cpu_data(); //以可变方式获取cpu数据的指针,并将数据的状态更改为HEAD_AT_CPU
+  void* mutable_gpu_data(); //以可变方式获取gpu数据的指针,并将数据的状态更改为HEAD_AT_GPU
+  /*
+  状态同步的枚举
+  UNINITIALIZED：数据未初始化
+  HEAD_AT_CPU：数据在cpu
+  HEAD_AT_GPU:数据在gpu
+  SYNCED:数据在cpu及gpu
+  */
   enum SyncedHead { UNINITIALIZED, HEAD_AT_CPU, HEAD_AT_GPU, SYNCED };
   SyncedHead head() const { return head_; }
   size_t size() const { return size_; }
@@ -76,8 +84,8 @@ class SyncedMemory {
  private:
   void check_device();
 
-  void to_cpu();
-  void to_gpu();
+  void to_cpu();  // 将数据从显存移动到内存
+  void to_gpu();  //将数据从内存移动到显存
   void* cpu_ptr_;
   void* gpu_ptr_;
   size_t size_;
