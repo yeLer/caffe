@@ -66,8 +66,8 @@ class Layer {
    */
   void SetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-    CheckBlobCounts(bottom, top);
-    LayerSetUp(bottom, top);
+    CheckBlobCounts(bottom, top); //检查输入和输出的blob数量是否正确
+    LayerSetUp(bottom, top); //  具体执行子类中不同于父类的函数
     Reshape(bottom, top);
     SetLossWeights(top);
   }
