@@ -1,98 +1,156 @@
 syntax = "proto2";  //指定协议proto2或proto3, caffe中的网络和优化器都是以proto协议的文件储存的。
 // 简单来说proto可看作用于数据收发的、一种优化版的xml。
 
+// package可以看作C++中的namespace，与Caffe C++代码中的namespace caffe对应
+// package用来避免名称冲突
 package caffe;
 
+
+// 在消息定义中，每个字段都有唯一的一个数字标识符。这些标识符是用来在消息的二进制格式中识别各个字段的，一旦开始使用就不能够再改变。
+// 注：[1,15]之内的标识号在编码的时候会占用一个字节。[16,2047]之内的标识号则占用2个字节。
+// 所以应该为那些频繁出现的消息元素保留 [1,15]之内的标识号。
+// required：一个格式良好的消息一定要含有一个这种字段，表示该值是必须要设置的。
+// optional：消息格式中该字段可以有0个或1个值（不超过1个）。
+// repeated：在一个格式良好的消息中，这种字段可以重复任意多次（包括0次）。重复的值的顺序会被保留，表示该值可以重复，相当于Java中的List。
+
 // Specifies the shape (dimensions) of a Blob.
+// 指定Blob的shape，4-D shape
 message BlobShape {
+  //数据块形状定义为Num * Channel * Height * Width, 原因在于caffe基于容器的多维嵌套来实现高维数据的封装, 即vector。
   repeated int64 dim = 1 [packed = true];
 }
 
+// Blob数据块，包括Blob shape，数据和微分
 message BlobProto {
+  // Blob的shape, 即numpy中的shape
   optional BlobShape shape = 7;
+  // Blob的数据部分
   repeated float data = 5 [packed = true];
+  // Blob的微分部分
   repeated float diff = 6 [packed = true];
+  // Blob中的数据部分(double类型)
   repeated double double_data = 8 [packed = true];
+  // Blob的微分部分(double类型)
   repeated double double_diff = 9 [packed = true];
 
   // 4D dimensions -- deprecated.  Use "shape" instead.
+  // Blob的4个维度，已被Blob shape代替
+  // Blob中数据的个数(例如卷积核的个数)
   optional int32 num = 1 [default = 0];
+  // Blob中数据的通道数
   optional int32 channels = 2 [default = 0];
+  // Blob中数据的高度
   optional int32 height = 3 [default = 0];
+  // Blob中数据的宽度
   optional int32 width = 4 [default = 0];
 }
 
 // The BlobProtoVector is simply a way to pass multiple blobproto instances
 // around.
+// BlobProtoVector, 用来保存多个BlobProb对象的Vector
 message BlobProtoVector {
   repeated BlobProto blobs = 1;
 }
 
+// 图像数据, channels-图像通道数, height-高度, width-宽度, data-图像像素数据, label-图像标签,
+// float_data-图像浮点型数据(0-1之间), encoded-图像编码方式
 message Datum {
+  // 图像的通道数
   optional int32 channels = 1;
+  // 图像的高度
   optional int32 height = 2;
+  // 图像的宽度
   optional int32 width = 3;
   // the actual image data, in bytes
+  // 实际的图像数据，以字节形式(uint8)表示
   optional bytes data = 4;
+  // 图像对应的标签，必须为整形
   optional int32 label = 5;
   // Optionally, the datum could also hold float data.
+  // 可选表示，图像数据表示为float数据，即0-255归一化到0-1之间
   repeated float float_data = 6;
   // If true data contains an encoded image that need to be decoded
+  // encoded为true表示图像采用压缩表示，需要解码
   optional bool encoded = 7 [default = false];
 }
 
+
+// Filler参数, filler主要对网络权重进行初始化
+// Filler类型分为常量初始化（constant）、高斯分布初始化（gaussian）、
+// positive_unitball初始化、均匀分布初始化（uniform）、xavier初始化、msra初始化、双线性初始化（bilinear）
 message FillerParameter {
   // The filler type.
+  // Filler的类型
   optional string type = 1 [default = 'constant'];
+  // 常量初始化的值
   optional float value = 2 [default = 0]; // the value in constant filler
+  // 均匀分布初始化中的最小值
   optional float min = 3 [default = 0]; // the min value in uniform filler
+  // 均匀分布初始化中的最大值
   optional float max = 4 [default = 1]; // the max value in uniform filler
+  // 高斯分布初始化中的均值
   optional float mean = 5 [default = 0]; // the mean value in Gaussian filler
+  // 高斯分布初始化中的标准差
   optional float std = 6 [default = 1]; // the std value in Gaussian filler
   // The expected number of non-zero output weights for a given input in
   // Gaussian filler -- the default -1 means don't perform sparsification.
+  // 在高斯分布初始化中给定输入及权重，期望输出非0值，默认值-1表示不进行稀疏化
   optional int32 sparse = 7 [default = -1];
   // Normalize the filler variance by fan_in, fan_out, or their average.
   // Applies to 'xavier' and 'msra' fillers.
+  // 通过fan_in, fan_out或average来归一化filler方差，主要应用到'xavier'和'msra' 的filler中
   enum VarianceNorm {
     FAN_IN = 0;
     FAN_OUT = 1;
     AVERAGE = 2;
   }
+  // 定义filler方差归一化，默认为FAN_IN
   optional VarianceNorm variance_norm = 8 [default = FAN_IN];
 }
 
+
+//神经网络参数
 message NetParameter {
+  // 神经网络名字
   optional string name = 1; // consider giving the network a name
   // DEPRECATED. See InputParameter. The input blobs to the network.
+  // 已废弃。网络的输入部分，具体请看InputParameter
   repeated string input = 3;
   // DEPRECATED. See InputParameter. The shape of the input blobs.
+  // 已废弃。输入blob的shape，具体请看InputParameter
   repeated BlobShape input_shape = 8;
 
   // 4D input dimensions -- deprecated.  Use "input_shape" instead.
   // If specified, for each input blob there should be four
   // values specifying the num, channels, height and width of the input blob.
   // Thus, there should be a total of (4 * #input) numbers.
+  // 已废弃。用input_shape代替
   repeated int32 input_dim = 4;
 
   // Whether the network will force every layer to carry out backward operation.
   // If set False, then whether to carry out backward is determined
   // automatically according to the net structure and learning rates.
+  // 网络中是否每一层都执行反向传播的标志，如果设为false，反向传播会根据网络结构和学习率自动进行。
   optional bool force_backward = 5 [default = false];
   // The current "state" of the network, including the phase, level, and stage.
   // Some layers may be included/excluded depending on this state and the states
   // specified in the layers' include and exclude fields.
+  // 网络的当前状态，包括phase, level和stage，(phase应该是对应prototxt文件中的TRAIN,TEST)
+  // 某些层是否included/excluded依赖于层中include，exclude字段指定的state。
   optional NetState state = 6;
 
   // Print debugging information about results while running Net::Forward,
   // Net::Backward, and Net::Update.
+  // 在执行Net::Forward,Net::Backward, Net::Update时是否打印调试信息。
   optional bool debug_info = 7 [default = false];
 
   // The layers that make up the net.  Each of their configurations, including
   // connectivity and behavior, is specified as a LayerParameter.
+  // 构成网络的layer，每一个layer的配置，包括连接性和行为都在LayerParameter中指定。
   repeated LayerParameter layer = 100;  // ID 100 so layers are printed last.
 
   // DEPRECATED: use 'layer' instead.
+  // 已废弃，用layer代替。
   repeated V1LayerParameter layers = 2;
 }
 
