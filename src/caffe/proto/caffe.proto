@@ -156,7 +156,7 @@ message NetParameter {
 
 // NOTE
 // Update the next available ID when you add a new SolverParameter field.
-//
+// 注意：当你添加一个新的SolverParameter字段时，要更新下一个可获取的ID
 // SolverParameter next available ID: 43 (last added: weights)
 message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
@@ -175,41 +175,57 @@ message SolverParameter {
 
   // Proto filename for the train net, possibly combined with one or more
   // test nets.
+  // 训练网络的prototxt文件名，可能结合一个或多个测试网络
   optional string net = 24;
   // Inline train net param, possibly combined with one or more test nets.
+   // 内联训练网络参数，可能结合一个或多个测试网络
   optional NetParameter net_param = 25;
-
+  
+  // 训练网络的proto文件名
   optional string train_net = 1; // Proto filename for the train net.
+  // 测试网络的proto文件名
   repeated string test_net = 2; // Proto filenames for the test nets.
+  // 内联训练网络参数
   optional NetParameter train_net_param = 21; // Inline train net params.
+  // 内联测试网络参数
   repeated NetParameter test_net_param = 22; // Inline test net params.
 
   // The states for the train/test nets. Must be unspecified or
   // specified once per net.
   //
+  // train网络的状态，必须不指定或每个网络指定一次
   // By default, train_state will have phase = TRAIN,
   // and all test_state's will have phase = TEST.
   // Other defaults are set according to the NetState defaults.
+  // test网络的状态，必须不指定或每个网络指定一次
   optional NetState train_state = 26;
   repeated NetState test_state = 27;
-
+  // 每个测试网络的迭代次数，即测试数据的迭代次数，测试数据总数=测试迭代次数*测试数据的batch_size。
   // The number of iterations for each test net.
   repeated int32 test_iter = 3;
-
+  
   // The number of iterations between two testing phases.
+  // 两次测试间隔的迭代次数，即训练数据迭代多少次进行一次测试。
   optional int32 test_interval = 4 [default = 0];
+  // 测试数据的loss，默认情况下不计算
   optional bool test_compute_loss = 19 [default = false];
   // If true, run an initial test pass before the first iteration,
   // ensuring memory availability and printing the starting value of the loss.
+  // 如果为true，在第一次迭代之前进行一次初始测试，从而确保内存可用性并输出初始损失值。
   optional bool test_initialization = 32 [default = true];
+  // 基本学习率
   optional float base_lr = 5; // The base learning rate
   // the number of iterations between displaying info. If display = 0, no info
   // will be displayed.
+  // 执行多少次迭代显示一次信息，如果display = 0，不输出信息。
   optional int32 display = 6;
   // Display the loss averaged over the last average_loss iterations
+  // 输出的平均损失是之前多少次迭代的平均损失。
   optional int32 average_loss = 33 [default = 1];
+  // 训练的最大迭代次数
   optional int32 max_iter = 7; // the maximum number of iterations
   // accumulate gradients over `iter_size` x `batch_size` instances
+  // 累积`iter_size` x `batch_size`个实例的梯度
   optional int32 iter_size = 36 [default = 1];
 
   // The learning rate decay policy. The currently implemented learning rate
@@ -227,70 +243,94 @@ message SolverParameter {
   //
   // where base_lr, max_iter, gamma, step, stepvalue and power are defined
   // in the solver parameter protocol buffer, and iter is the current iteration.
+  // 学习率的变化策略
   optional string lr_policy = 8;
+  // 学习率的计算参数
   optional float gamma = 9; // The parameter to compute the learning rate.
+  // 学习率的计算参数
   optional float power = 10; // The parameter to compute the learning rate.
+  // 动量参数
   optional float momentum = 11; // The momentum value.
+  // 权重衰减，权重衰减主要影响神经网络的正则项，具体可参考Caffe文档
   optional float weight_decay = 12; // The weight decay.
   // regularization types supported: L1 and L2
   // controlled by weight_decay
+  // 正则化类型支持L1和L2，受weight_decay控制，默认是l2
   optional string regularization_type = 29 [default = "L2"];
   // the stepsize for learning rate policy "step"
+  // 学习率方案为step时的参数
   optional int32 stepsize = 13;
   // the stepsize for learning rate policy "multistep"
+  // 学习率方案为multistep时的参数
   repeated int32 stepvalue = 34;
 
   // Set clip_gradients to >= 0 to clip parameter gradients to that L2 norm,
   // whenever their actual L2 norm is larger.
+  // 设置clip_gradients >= 0可以削减L2范数的梯度，当真实L2范数的梯度大于clip_gradients，将L2范数的梯度设为clip_gradients
   optional float clip_gradients = 35 [default = -1];
-
+  // snapshot的间隔，即迭代多少次保存一次snapshot
   optional int32 snapshot = 14 [default = 0]; // The snapshot interval
   // The prefix for the snapshot.
   // If not set then is replaced by prototxt file path without extension.
   // If is set to directory then is augmented by prototxt file name
   // without extention.
+  // snapshot的前缀
   optional string snapshot_prefix = 15;
   // whether to snapshot diff in the results or not. Snapshotting diff will help
   // debugging but the final protocol buffer size will be much larger.
+  // 是否在结果中保存snapshot的差分，snapshot_diff有助于调试，但snapshot的文件会更大。
   optional bool snapshot_diff = 16 [default = false];
+  // snapshot的保存格式（hdf5,binaryproto）。
   enum SnapshotFormat {
     HDF5 = 0;
     BINARYPROTO = 1;
   }
+  // snapshot默认保存为BINARYPROTO。
   optional SnapshotFormat snapshot_format = 37 [default = BINARYPROTO];
   // the mode solver will use: 0 for CPU and 1 for GPU. Use GPU in default.
+  // 求解神经网络的方式，0 CPU, 1 GPU。默认使用GPU
   enum SolverMode {
     CPU = 0;
     GPU = 1;
   }
+  // 求解神经网络的模式，0 CPU, 1 GPU。默认使用GPU
   optional SolverMode solver_mode = 17 [default = GPU];
   // the device_id will that be used in GPU mode. Use device_id = 0 in default.
+  // device_id是GPU模式下GPU的ID。
   optional int32 device_id = 18 [default = 0];
   // If non-negative, the seed with which the Solver will initialize the Caffe
   // random number generator -- useful for reproducible results. Otherwise,
   // (and by default) initialize using a seed derived from the system clock.
+  // 如果是非负值，seed用来初始化Caffe的随机数生成器，对于可复制的结果是很有用的，默认情况下，seed的是从系统时钟获取。
   optional int64 random_seed = 20 [default = -1];
-
+  
   // type of the solver
+  // 神经网络求解的类型, 默认为SGD
   optional string type = 40 [default = "SGD"];
 
   // numerical stability for RMSProp, AdaGrad and AdaDelta and Adam
+  // RMSProp, AdaGrad, AdaDelta, Adam求解类型的参数
   optional float delta = 31 [default = 1e-8];
   // parameters for the Adam solver
+  // Adam求解类型的参数
   optional float momentum2 = 39 [default = 0.999];
 
   // RMSProp decay value
   // MeanSquare(t) = rms_decay*MeanSquare(t-1) + (1-rms_decay)*SquareGradient(t)
+  // RMSProp类型的衰减值
   optional float rms_decay = 38 [default = 0.99];
 
   // If true, print information about the state of the net that may help with
   // debugging learning problems.
+  // 如果设为true，会输出网络的状态信息，有助于调试
   optional bool debug_info = 23 [default = false];
 
   // If false, don't save a snapshot after training finishes.
+  // 如果设为false，不保存训练结束的snapshot。
   optional bool snapshot_after_train = 28 [default = true];
 
   // DEPRECATED: old solver enum types, use string instead
+  // 已废弃，使用string代替
   enum SolverType {
     SGD = 0;
     NESTEROV = 1;
@@ -300,6 +340,7 @@ message SolverParameter {
     ADAM = 5;
   }
   // DEPRECATED: use type instead of solver_type
+  // 已废弃：使用type代替
   optional SolverType solver_type = 30 [default = SGD];
 
   // Overlap compute and communication for data parallel training
@@ -313,35 +354,52 @@ message SolverParameter {
   // If several model files are expected, they can be listed in a one 
   // weights parameter separated by ',' (like in a command string) or
   // in repeated weights parameters separately.
+  
+  // 带有预训练权重的caffemodel文件的路径，用于初始化微调。
+  // 与caffe train命令的命令行--weights参数相同。
+  // 如果指定了命令行--weights参数，则优先级更高
+  // 并覆盖此代码。
+  // 如果指定了--snapshot命令行参数，则将忽略该参数。
+  // 如果需要多个模型文件，则可以在一个文件中列出
+  // weights参数以'，'分隔（例如在命令字符串中）或
+  // 分别在重复的权重参数中。
   repeated string weights = 42;
 }
 
 // A message that stores the solver snapshots
+// 保存solver snapshots
 message SolverState {
+  // 当前的迭代次数
   optional int32 iter = 1; // The current iteration
+  // 保存学习到的网络
   optional string learned_net = 2; // The file that stores the learned net.
+  // sgd的求解历史
   repeated BlobProto history = 3; // The history for sgd solvers
+  // 学习的当前step
   optional int32 current_step = 4 [default = 0]; // The current step for learning rate
 }
-
+// 定义phase
 enum Phase {
    TRAIN = 0;
    TEST = 1;
 }
-
+// 网络状态
 message NetState {
+  // 属于哪个phase
   optional Phase phase = 1 [default = TEST];
   optional int32 level = 2 [default = 0];
   repeated string stage = 3;
 }
-
+// 网络状态分类
 message NetStateRule {
   // Set phase to require the NetState have a particular phase (TRAIN or TEST)
   // to meet this rule.
+  // 设置phase
   optional Phase phase = 1;
 
   // Set the minimum and/or maximum levels in which the layer should be used.
   // Leave undefined to meet the rule regardless of level.
+  // 设置layer的level
   optional int32 min_level = 2;
   optional int32 max_level = 3;
 
@@ -349,21 +407,26 @@ message NetStateRule {
   // The net must have ALL of the specified stages and NONE of the specified
   // "not_stage"s to meet the rule.
   // (Use multiple NetStateRules to specify conjunctions of stages.)
+  // 可定制的stage集合
   repeated string stage = 4;
   repeated string not_stage = 5;
 }
 
 // Specifies training parameters (multipliers on global learning constants,
 // and the name and other settings used for weight sharing).
+// 指定训练参数及名称以及权重共享的其它设置
 message ParamSpec {
   // The names of the parameter blobs -- useful for sharing parameters among
   // layers, but never required otherwise.  To share a parameter between two
   // layers, give it a (non-empty) name.
+  // 两个layer之间进行参数共享的blob名字
   optional string name = 1;
 
   // Whether to require shared weights to have the same shape, or just the same
   // count -- defaults to STRICT if unspecified.
+  // 参数共享时是否需要具有相同的shape，默认情况下需要有相同的shape
   optional DimCheckMode share_mode = 2;
+  // 参数共享时的维度检查
   enum DimCheckMode {
     // STRICT (default) requires that num, channels, height, width each match.
     STRICT = 0;
@@ -372,9 +435,11 @@ message ParamSpec {
   }
 
   // The multiplier on the global learning rate for this parameter.
+  // 学习率参数, learning rate = base_lr * lr_mult
   optional float lr_mult = 3 [default = 1.0];
 
   // The multiplier on the global weight decay for this parameter.
+  // 权重衰减参数, weight = weight_decay * decay_mult
   optional float decay_mult = 4 [default = 1.0];
 }
 
@@ -382,25 +447,34 @@ message ParamSpec {
 // Update the next available ID when you add a new LayerParameter field.
 //
 // LayerParameter next available layer-specific ID: 149 (last added: clip_param)
+// 注意：当你添加一个新的LayerParameter字段时，要更新下一个可获取的ID
 message LayerParameter {
+  // layer名称
   optional string name = 1; // the layer name
+  // layer类型
   optional string type = 2; // the layer type
+  // layer的输入
   repeated string bottom = 3; // the name of each bottom blob
+  // layer的输出
   repeated string top = 4; // the name of each top blob
 
   // The train / test phase for computation.
+  // layer用在train/test phase
   optional Phase phase = 10;
 
   // The amount of weight to assign each top blob in the objective.
   // Each layer assigns a default value, usually of either 0 or 1,
   // to each top blob.
+  // layer对最终的loss损失值的贡献率
   repeated float loss_weight = 5;
 
   // Specifies training parameters (multipliers on global learning constants,
   // and the name and other settings used for weight sharing).
+  // 指定训练参数
   repeated ParamSpec param = 6;
 
   // The blobs containing the numeric parameters of the layer.
+  // layer的blobs
   repeated BlobProto blobs = 7;
 
   // Specifies whether to backpropagate to each bottom. If unspecified,
@@ -410,6 +484,8 @@ message LayerParameter {
   // backpropagation to those inputs is skipped.
   //
   // The size must be either 0 or equal to the number of bottoms.
+  // 指定反向传播是否传播到每一个bottom，如果不指定，caffe会自动检查推断是否每一个输入都需要反向传播来计算梯度。如果一些输入设为true,
+  // 则这些layer强制进行反向传播，如果设为false，这些layer将跳过反向传播。
   repeated bool propagate_down = 11;
 
   // Rules controlling whether and when a layer is included in the network,
@@ -418,13 +494,21 @@ message LayerParameter {
   // specified, the layer is always included.  If the current NetState meets
   // ANY (i.e., one or more) of the specified rules, the layer is
   // included/excluded.
+  // 规则控制网络中是否以及何时包含一层，
+  // 基于当前的NetState。 您可以指定非零数量的规则
+  // 包含或排除，但不能同时包含。 如果没有，则包含或排除规则
+  // 指定，始终包含该图层。 如果当前的NetState满足
+  // 任意（即，一个或多个）指定规则，该层为
+  // 包含/排除。
   repeated NetStateRule include = 8;
   repeated NetStateRule exclude = 9;
 
   // Parameters for data pre-processing.
+  // 数据预处理参数
   optional TransformationParameter transform_param = 100;
 
   // Parameters shared by loss layers.
+  // loss layer的参数共享
   optional LossParameter loss_param = 101;
 
   // Layer type-specific parameters.
@@ -433,6 +517,7 @@ message LayerParameter {
   // for their implementation. These layers include an Engine type and
   // engine parameter for selecting the implementation.
   // The default for the engine is set by the ENGINE switch at compile-time.
+  // 特定layer的参数
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
   optional BatchNormParameter batch_norm_param = 139;
@@ -484,63 +569,84 @@ message LayerParameter {
 
 // Message that stores parameters used to apply transformation
 // to the data layer's data
+
+// 用来进行数据层（图像）变换的参数
 message TransformationParameter {
   // For data pre-processing, we can do simple scaling and subtracting the
   // data mean, if provided. Note that the mean subtraction is always carried
   // out before scaling.
+  // 像素归一化，归一化之前会减去均值
   optional float scale = 1 [default = 1];
   // Specify if we want to randomly mirror data.
+  // 图像进行随机mirror操作
   optional bool mirror = 2 [default = false];
   // Specify if we would like to randomly crop an image.
+  // 图像随机crop操作
   optional uint32 crop_size = 3 [default = 0];
   // mean_file and mean_value cannot be specified at the same time
+  // 图像的均值文件
   optional string mean_file = 4;
   // if specified can be repeated once (would subtract it from all the channels)
   // or can be repeated the same number of times as channels
   // (would subtract them from the corresponding channel)
+  // 图像的均值，手动指定，通常是三个
   repeated float mean_value = 5;
   // Force the decoded image to have 3 color channels.
+  // 强制图像必须有三个颜色通道
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
+  // 强制图像为灰度图像
   optional bool force_gray = 7 [default = false];
 }
 
 // Message that stores parameters shared by loss layers
+// loss层参数
 message LossParameter {
   // If specified, ignore instances with the given label.
+  // 如果指定，则label等于ignore_label的样本将不参与Loss计算，并且反向传播时梯度直接置0。
   optional int32 ignore_label = 1;
   // How to normalize the loss for loss layers that aggregate across batches,
   // spatial dimensions, or other dimensions.  Currently only implemented in
   // SoftmaxWithLoss and SigmoidCrossEntropyLoss layers.
+  // 如何标准化跨批次聚合的损失层的损失，
+  // 空间尺寸或其他尺寸。 目前仅在SoftmaxWithLoss和SigmoidCrossEntropyLoss层实现。
   enum NormalizationMode {
     // Divide by the number of examples in the batch times spatial dimensions.
     // Outputs that receive the ignore label will NOT be ignored in computing
     // the normalization factor.
+    // 所有样本都参与计算，包括ignore_label
     FULL = 0;
     // Divide by the total number of output locations that do not take the
     // ignore_label.  If ignore_label is not set, this behaves like FULL.
+    // 所有样本都参与计算，不包括ignore_label
     VALID = 1;
     // Divide by the batch size.
+    // 除以给定的batch size。
     BATCH_SIZE = 2;
     // Do not normalize the loss.
+    // 不归一化loss
     NONE = 3;
   }
   // For historical reasons, the default normalization for
   // SigmoidCrossEntropyLoss is BATCH_SIZE and *not* VALID.
+  // loss归一化方式
   optional NormalizationMode normalization = 3 [default = VALID];
   // Deprecated.  Ignored if normalization is specified.  If normalization
   // is not specified, then setting this to false will be equivalent to
   // normalization = BATCH_SIZE to be consistent with previous behavior.
+  // 已废弃。Loss会除以参与计算的样本总数；否则Loss等于直接求和
   optional bool normalize = 2;
 }
 
 // Messages that store parameters used by individual layer types follow, in
 // alphabetical order.
 
+// accuracy层参数
 message AccuracyParameter {
   // When computing accuracy, count as correct by comparing the true label to
   // the top k scoring classes.  By default, only compare to the top scoring
   // class (i.e. argmax).
+  // 计算前top-k的准确率，默认计算top-1准确率
   optional uint32 top_k = 1 [default = 1];
 
   // The "label" axis of the prediction blob, whose argmax corresponds to the
@@ -548,20 +654,29 @@ message AccuracyParameter {
   // last axis).  For example, if axis == 1 and the predictions are
   // (N x C x H x W), the label blob is expected to contain N*H*W ground truth
   // labels with integer values in {0, 1, ..., C-1}.
+  //预测Blob的“标签”轴，其argmax对应于预测的标签可能对从末尾开始的索引为负（例如，对于最后一个轴为-1）。
+  //例如，如果axis == 1且预测为（N x C x H x W），则标签Blob预计将包含N * H * W地面真值标签，其整数值为{0，1，...， C-1}。
+  
+  // 指定在哪个维度上计算label
   optional int32 axis = 2 [default = 1];
 
   // If specified, ignore instances with the given label.
+  // 如果指定，则忽略给定标签的实例
   optional int32 ignore_label = 3;
 }
 
+// 标签最大化参数，标签最大化即确定概率最大的label
 message ArgMaxParameter {
   // If true produce pairs (argmax, maxval)
+  // 如果为真，则生成(argmax, maxval)
   optional bool out_max_val = 1 [default = false];
+  // 类别的top-k
   optional uint32 top_k = 2 [default = 1];
   // The axis along which to maximise -- may be negative to index from the
   // end (e.g., -1 for the last axis).
   // By default ArgMaxLayer maximizes over the flattened trailing dimensions
   // for each index of the first / num dimension.
+  // 根据axis进行标签最大化
   optional int32 axis = 3;
 }
 
@@ -571,23 +686,29 @@ message ClipParameter {
   required float max = 2;
 }
 
+// 参数拼接，在deconv的prototxt文件中见过
 message ConcatParameter {
   // The axis along which to concatenate -- may be negative to index from the
   // end (e.g., -1 for the last axis).  Other axes must have the
   // same dimension for all the bottom blobs.
   // By default, ConcatLayer concatenates blobs along the "channels" axis (1).
+  // 参数拼接时的维度，按axis进行拼接
   optional int32 axis = 2 [default = 1];
 
   // DEPRECATED: alias for "axis" -- does not support negative indexing.
+  // 已废弃。与axis一样。
   optional uint32 concat_dim = 1 [default = 1];
 }
 
+// batch norm层的相关参数, batch norm layer通常配与scale layer一起使用，具体用法可参考Resnet结构
 message BatchNormParameter {
   // If false, normalization is performed over the current mini-batch
   // and global statistics are accumulated (but not yet used) by a moving
   // average.
+  // 如果设定为false，在批量上进行归一化操作，并通过移动平均进行全局统计的累计
   // If true, those accumulated mean and variance values are used for the
   // normalization.
+  // 如果为true，累计的均值和方差将被用作于归一化
   // By default, it is set to false when the network is in the training
   // phase and true when the network is in the testing phase.
   optional bool use_global_stats = 1;
@@ -598,12 +719,15 @@ message BatchNormParameter {
   // current mean @f$ Y_t @f$ by
   // @f$ S_t = (1-\beta)Y_t + \beta \cdot S_{t-1} @f$, where @f$ \beta @f$
   // is the moving_average_fraction parameter.
+  // 每次迭代平均值衰减比例
   optional float moving_average_fraction = 2 [default = .999];
   // Small value to add to the variance estimate so that we don't divide by
   // zero.
+  // variance估计时为了使除数不为0，需要加上eps
   optional float eps = 3 [default = 1e-5];
 }
 
+// bias层参数
 message BiasParameter {
   // The first axis of bottom[0] (the first input Blob) along which to apply
   // bottom[1] (the second input Blob).  May be negative to index from the end
@@ -636,8 +760,10 @@ message BiasParameter {
   optional FillerParameter filler = 3;
 }
 
+// 对比损失层，siamese network中使用了对比损失
 message ContrastiveLossParameter {
   // margin for dissimilar pair
+  // 不相似的样本对的距离保持在margin以上
   optional float margin = 1 [default = 1.0];
   // The first implementation of this cost did not exactly match the cost of
   // Hadsell et al 2006 -- using (margin - d^2) instead of (margin - d)^2.
@@ -645,21 +771,30 @@ message ContrastiveLossParameter {
   // Hadsell paper. New models should probably use this version.
   // legacy_version = true uses (margin - d^2). This is kept to support /
   // reproduce existing models and results
+  // 第一版对比损失没有完全按论文写，如果为false，则按照论文原来的公式计算
   optional bool legacy_version = 2 [default = false];
 }
 
+
+// 卷积层参数
 message ConvolutionParameter {
+  // 输出数据的个数
   optional uint32 num_output = 1; // The number of outputs for the layer
+  // 是否有偏置项
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
 
   // Pad, kernel size, and stride are all given as a single value for equal
   // dimensions in all spatial dimensions, or once per spatial dimension.
+  // 卷积padding的大小
   repeated uint32 pad = 3; // The padding size; defaults to 0
+  // 卷积核的大小
   repeated uint32 kernel_size = 4; // The kernel size
+  // 卷积的步长
   repeated uint32 stride = 6; // The stride; defaults to 1
   // Factor used to dilate the kernel, (implicitly) zero-filling the resulting
   // holes. (Kernel dilation is sometimes referred to by its use in the
   // algorithme à trous from Holschneider et al. 1987.)
+  // 卷积膨胀，在卷积的时候可以skip一定长度的像素
   repeated uint32 dilation = 18; // The dilation; defaults to 1
 
   // For 2D convolution only, the *_h and *_w versions may also be used to
@@ -670,16 +805,20 @@ message ConvolutionParameter {
   optional uint32 kernel_w = 12; // The kernel width (2D only)
   optional uint32 stride_h = 13; // The stride height (2D only)
   optional uint32 stride_w = 14; // The stride width (2D only)
-
+  
+  // 分组卷积参数，来自于AlexNet论文
   optional uint32 group = 5 [default = 1]; // The group size for group conv
-
+  
+  // 权重初始化
   optional FillerParameter weight_filler = 7; // The filler for the weight
+  // 偏置初始化
   optional FillerParameter bias_filler = 8; // The filler for the bias
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 卷积的方式的选择，default是正常的卷积，caffe是矩阵乘法的卷积，cudnn是cuda库流并行式的卷积
   optional Engine engine = 15 [default = DEFAULT];
 
   // The axis to interpret as "channels" when performing convolution.
@@ -691,6 +830,7 @@ message ConvolutionParameter {
   // With (N, C, D, H, W) inputs, and axis == 1, we perform
   // N independent 3D convolutions, sliding (C/g)-channels
   // filters across the spatial axes (D, H, W) of the input.
+  // 通道channel所在的维度
   optional int32 axis = 16 [default = 1];
 
   // Whether to force use of the general ND convolution, even if a specific
@@ -698,9 +838,12 @@ message ConvolutionParameter {
   // is available. (Currently, there is only a 2D-specific convolution
   // implementation; for input blobs with num_axes != 2, this option is
   // ignored and the ND implementation will be used.)
+  // 如果输入数据维度等于2，则执行通用的ND卷积，否则正常执行卷积
   optional bool force_nd_im2col = 17 [default = false];
 }
 
+
+// 图像裁剪参数
 message CropParameter {
   // To crop, elements of the first bottom are selected to fit the dimensions
   // of the second, reference bottom. The crop is configured by
@@ -715,50 +858,68 @@ message CropParameter {
   // Note: standard dimensions are N,C,H,W so the default is a spatial crop,
   // and `axis` may be negative to index from the end (e.g., -1 for the last
   // axis).
+  // axis是在哪个维度上进行裁剪，会裁剪轴2及之后的所有轴
   optional int32 axis = 1 [default = 2];
+  // offset设置是每个维度进行裁剪时的偏移量
   repeated uint32 offset = 2;
 }
 
+
+// 数据层参数
 message DataParameter {
   enum DB {
     LEVELDB = 0;
     LMDB = 1;
   }
   // Specify the data source.
+  // 设定数据源路径
   optional string source = 1;
   // Specify the batch size.
+  // 指定一次处理的图片数量
   optional uint32 batch_size = 4;
   // The rand_skip variable is for the data layer to skip a few data points
   // to avoid all asynchronous sgd clients to start at the same point. The skip
   // point would be set as rand_skip * rand(0,1). Note that rand_skip should not
   // be larger than the number of keys in the database.
   // DEPRECATED. Each solver accesses a different subset of the database.
+  // rand_skip跳过指定的数据点，避免异步的sgd从同一个数据点开始
   optional uint32 rand_skip = 7 [default = 0];
+  // 使用的数据库类型，LMDB or LEVELDB
   optional DB backend = 8 [default = LEVELDB];
   // DEPRECATED. See TransformationParameter. For data pre-processing, we can do
   // simple scaling and subtracting the data mean, if provided. Note that the
   // mean subtraction is always carried out before scaling.
+  // 已废弃。图像归一化，在TransformationParameter中。
   optional float scale = 2 [default = 1];
+  // 已废弃。均值文件，在TransformationParameter中。
   optional string mean_file = 3;
   // DEPRECATED. See TransformationParameter. Specify if we would like to randomly
   // crop an image.
+  // 已废弃。图像裁剪，在TransformationParameter中。
   optional uint32 crop_size = 5 [default = 0];
   // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
   // data.
+  // 已废弃。图像翻转，在TransformationParameter中。
   optional bool mirror = 6 [default = false];
   // Force the encoded image to have 3 color channels
+  // 强制图像数据有三个颜色通道
   optional bool force_encoded_color = 9 [default = false];
   // Prefetch queue (Increase if data feeding bandwidth varies, within the
   // limit of device memory for GPU training)
+  // 预先拉取batch的数目
   optional uint32 prefetch = 10 [default = 4];
 }
 
+// dropout层参数
 message DropoutParameter {
+  // 为了避免过拟合，参数随机失活的比例
   optional float dropout_ratio = 1 [default = 0.5]; // dropout ratio
 }
 
 // DummyDataLayer fills any number of arbitrarily shaped blobs with random
 // (or constant) data generated by "Fillers" (see "message FillerParameter").
+
+// DummyData层的参数
 message DummyDataParameter {
   // This layer produces N >= 1 top blobs.  DummyDataParameter must specify 1 or N
   // shape fields, and 0, 1 or N data_fillers.
@@ -766,31 +927,40 @@ message DummyDataParameter {
   // If 0 data_fillers are specified, ConstantFiller with a value of 0 is used.
   // If 1 data_filler is specified, it is applied to all top blobs.  If N are
   // specified, the ith is applied to the ith top blob.
+  // blob数据的生成方式
   repeated FillerParameter data_filler = 1;
+  // 数据的维度
   repeated BlobShape shape = 6;
 
   // 4D dimensions -- deprecated.  Use "shape" instead.
+  // 已废弃。使用shape代替。
   repeated uint32 num = 2;
   repeated uint32 channels = 3;
   repeated uint32 height = 4;
   repeated uint32 width = 5;
 }
 
+//Eltwise层的参数
 message EltwiseParameter {
+  // 操作的类型
   enum EltwiseOp {
     PROD = 0;
     SUM = 1;
     MAX = 2;
   }
+  // 数据操作分三种：点乘，相加，取最大值，默认相加
   optional EltwiseOp operation = 1 [default = SUM]; // element-wise operation
+  // SUM操作时各个blob对应的系数
   repeated float coeff = 2; // blob-wise coefficient for SUM operation
 
   // Whether to use an asymptotically slower (for >2 inputs) but stabler method
   // of computing the gradient for the PROD operation. (No effect for SUM op.)
+  // 在进行PROD操作，即乘法时是否使用异步操作来计算梯度，更慢但更稳定。
   optional bool stable_prod_grad = 3 [default = true];
 }
 
 // Message that stores parameters used by ELULayer
+// ELU层的参数，具体看论文
 message ELUParameter {
   // Described in:
   // Clevert, D.-A., Unterthiner, T., & Hochreiter, S. (2015). Fast and Accurate
@@ -799,46 +969,59 @@ message ELUParameter {
 }
 
 // Message that stores parameters used by EmbedLayer
+// Embed层的参数，主要用于LSTM等翻译网络
 message EmbedParameter {
+  // Embed层的输出
   optional uint32 num_output = 1; // The number of outputs for the layer
   // The input is given as integers to be interpreted as one-hot
   // vector indices with dimension num_input.  Hence num_input should be
   // 1 greater than the maximum possible input value.
+  // Embed层的输入
   optional uint32 input_dim = 2;
-
+  // 是否使用偏置项
   optional bool bias_term = 3 [default = true]; // Whether to use a bias term
+  // 权重生成
   optional FillerParameter weight_filler = 4; // The filler for the weight
+  // 偏置生成
   optional FillerParameter bias_filler = 5; // The filler for the bias
 
 }
 
 // Message that stores parameters used by ExpLayer
+// Exp层的参数，即指数层参数
 message ExpParameter {
   // ExpLayer computes outputs y = base ^ (shift + scale * x), for base > 0.
   // Or if base is set to the default (-1), base is set to e,
   // so y = exp(shift + scale * x).
+  // 指数层的计算是y = base ^ (shift + scale * x)，下面分别是公式中的三个参数
   optional float base = 1 [default = -1.0];
   optional float scale = 2 [default = 1.0];
   optional float shift = 3 [default = 0.0];
 }
 
 /// Message that stores parameters used by FlattenLayer
+// Flatten层的参数，主要是按某个轴展开（平铺），mnist demo的mnist_autoencode就使用了Flatten层
 message FlattenParameter {
   // The first axis to flatten: all preceding axes are retained in the output.
   // May be negative to index from the end (e.g., -1 for the last axis).
+  // 从哪一层开始展开
   optional int32 axis = 1 [default = 1];
 
   // The last axis to flatten: all following axes are retained in the output.
   // May be negative to index from the end (e.g., the default -1 for the last
   // axis).
+  // 展开到哪一层结束
   optional int32 end_axis = 2 [default = -1];
 }
 
 // Message that stores parameters used by HDF5DataLayer
+// HDF5数据层的参数
 message HDF5DataParameter {
   // Specify the data source.
+  // HDF5层输入数据的数据源
   optional string source = 1;
   // Specify the batch size.
+  // 训练的batch_size
   optional uint32 batch_size = 2;
 
   // Specify whether to shuffle the data.
@@ -846,103 +1029,137 @@ message HDF5DataParameter {
   // and the ordering of data within any given HDF5 file is shuffled,
   // but data between different files are not interleaved; all of a file's
   // data are output (in a random order) before moving onto another file.
+  // 是否对HDF5的输入数据进行shuffle
   optional bool shuffle = 3 [default = false];
 }
 
+// HDF5输出层参数
 message HDF5OutputParameter {
+  // 输出的HDF5文件的文件名
   optional string file_name = 1;
 }
 
+// HingeLoss层参数
 message HingeLossParameter {
   enum Norm {
     L1 = 1;
     L2 = 2;
   }
   // Specify the Norm to use L1 or L2
+  // 指定HingeLoss的类型
   optional Norm norm = 1 [default = L1];
 }
 
+// ImageData层参数，网络中直接输入原图
 message ImageDataParameter {
   // Specify the data source.
+  // 描述图像路径及标签的文件
   optional string source = 1;
   // Specify the batch size.
+  // 训练的batch size
   optional uint32 batch_size = 4 [default = 1];
   // The rand_skip variable is for the data layer to skip a few data points
   // to avoid all asynchronous sgd clients to start at the same point. The skip
   // point would be set as rand_skip * rand(0,1). Note that rand_skip should not
   // be larger than the number of keys in the database.
+  // rand_skip跳过指定的数据点，避免异步的sgd从同一个数据点开始，与Data层中是一样的
   optional uint32 rand_skip = 7 [default = 0];
   // Whether or not ImageLayer should shuffle the list of files at every epoch.
+  // 是否对图像顺序进行shuffle
   optional bool shuffle = 8 [default = false];
   // It will also resize images if new_height or new_width are not zero.
+  // 图像resize的高度
   optional uint32 new_height = 9 [default = 0];
+  // 图像resize的宽度
   optional uint32 new_width = 10 [default = 0];
   // Specify if the images are color or gray
+  // 指定图像彩色图像还是灰度图像，默认彩色
   optional bool is_color = 11 [default = true];
   // DEPRECATED. See TransformationParameter. For data pre-processing, we can do
   // simple scaling and subtracting the data mean, if provided. Note that the
   // mean subtraction is always carried out before scaling.
+  // 已废弃。参考TransformationParameter中的scale
   optional float scale = 2 [default = 1];
+  // 指定均值文件
   optional string mean_file = 3;
   // DEPRECATED. See TransformationParameter. Specify if we would like to randomly
   // crop an image.
+  // 已废弃。参考TransformationParameter中的crop_size
   optional uint32 crop_size = 5 [default = 0];
   // DEPRECATED. See TransformationParameter. Specify if we want to randomly mirror
   // data.
+  // 已废弃，参考TransformationParameter的mirror。
   optional bool mirror = 6 [default = false];
   optional string root_folder = 12 [default = ""];
 }
 
+// 信息增益损失层参数
 message InfogainLossParameter {
   // Specify the infogain matrix source.
+  // 指定存储信息增益矩阵的源文件
   optional string source = 1;
   optional int32 axis = 2 [default = 1]; // axis of prob
 }
 
+// 全连接层的参数
 message InnerProductParameter {
+  // InnerProduct层的输出
   optional uint32 num_output = 1; // The number of outputs for the layer
+  // 是否有偏置项
   optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  // 权重初始化，随机生成
   optional FillerParameter weight_filler = 3; // The filler for the weight
+  // 偏置初始化，随机生成
   optional FillerParameter bias_filler = 4; // The filler for the bias
 
   // The first axis to be lumped into a single inner product computation;
   // all preceding axes are retained in the output.
   // May be negative to index from the end (e.g., -1 for the last axis).
+  // 从某一维度开始进行内积计算，前面的维度保留
   optional int32 axis = 5 [default = 1];
   // Specify whether to transpose the weight matrix or not.
   // If transpose == true, any operations will be performed on the transpose
   // of the weight matrix. The weight matrix itself is not going to be transposed
   // but rather the transfer flag of operations will be toggled accordingly.
+  // 是否对权重矩阵进行转置
   optional bool transpose = 6 [default = false];
 }
 
+// Input参数，caffe网络部署时会用到
 message InputParameter {
   // This layer produces N >= 1 top blob(s) to be assigned manually.
   // Define N shapes to set a shape for each top.
   // Define 1 shape to set the same shape for every top.
   // Define no shape to defer to reshaping manually.
+  // 输入数据的shape
   repeated BlobShape shape = 1;
 }
 
 // Message that stores parameters used by LogLayer
+// Log层参数，对数据进行Log运算
 message LogParameter {
   // LogLayer computes outputs y = log_base(shift + scale * x), for base > 0.
   // Or if base is set to the default (-1), base is set to e,
   // so y = ln(shift + scale * x) = log_e(shift + scale * x)
+  // Log层计算公式为y = log_base(shift + scale * x)，下面分别是公式中的三个参数
   optional float base = 1 [default = -1.0];
   optional float scale = 2 [default = 1.0];
   optional float shift = 3 [default = 0.0];
 }
 
 // Message that stores parameters used by LRNLayer
+// LRN层的参数，局部归一化，AlexNet中的LRN
 message LRNParameter {
+  // 如果是跨通道LRN，则表示求和的通道数；如果是在通道内LRN，则表示求和的正方形区域长度。
   optional uint32 local_size = 1 [default = 5];
+  // 归一化公式中的参数
   optional float alpha = 2 [default = 1.];
   optional float beta = 3 [default = 0.75];
   enum NormRegion {
     ACROSS_CHANNELS = 0;
     WITHIN_CHANNEL = 1;
   }
+  // 归一化的区域，分为通道内和跨通道两种
   optional NormRegion norm_region = 4 [default = ACROSS_CHANNELS];
   optional float k = 5 [default = 1.];
   enum Engine {
@@ -950,54 +1167,77 @@ message LRNParameter {
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 与前面的engine是一样的
   optional Engine engine = 6 [default = DEFAULT];
 }
 
+// 内存数据层参数
 message MemoryDataParameter {
+  // 训练的batch_size
   optional uint32 batch_size = 1;
+  // 图像通道数
   optional uint32 channels = 2;
+  // 图像高度
   optional uint32 height = 3;
+  // 图像宽度
   optional uint32 width = 4;
 }
 
+// mean-variance normalization层参数
 message MVNParameter {
   // This parameter can be set to false to normalize mean only
+  // 是否对方差进行归一化
   optional bool normalize_variance = 1 [default = true];
 
   // This parameter can be set to true to perform DNN-like MVN
+  // 是否进行跨通道的MVN
   optional bool across_channels = 2 [default = false];
 
   // Epsilon for not dividing by zero while normalizing variance
+  // 避免除数为0，与前面的一样
   optional float eps = 3 [default = 1e-9];
 }
-
+// 参数层参数
 message ParameterParameter {
+  // 用户自己定义的shape
   optional BlobShape shape = 1;
 }
 
+// 池化层参数
 message PoolingParameter {
   enum PoolMethod {
     MAX = 0;
     AVE = 1;
     STOCHASTIC = 2;
   }
+  // 池化的方式
   optional PoolMethod pool = 1 [default = MAX]; // The pooling method
   // Pad, kernel size, and stride are all given as a single value for equal
   // dimensions in height and width or as Y, X pairs.
+  // padding的大小
   optional uint32 pad = 4 [default = 0]; // The padding size (equal in Y, X)
+  // padding的高度
   optional uint32 pad_h = 9 [default = 0]; // The padding height
+  // padding的宽度
   optional uint32 pad_w = 10 [default = 0]; // The padding width
+  // 池化的核大小
   optional uint32 kernel_size = 2; // The kernel size (square)
+  // 核高度
   optional uint32 kernel_h = 5; // The kernel height
+  // 核宽度
   optional uint32 kernel_w = 6; // The kernel width
+  // 池化的步长
   optional uint32 stride = 3 [default = 1]; // The stride (equal in Y, X)
+  // 步长的高度
   optional uint32 stride_h = 7; // The stride height
+  // 步长的宽度
   optional uint32 stride_w = 8; // The stride width
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 执行池化操作的类型，与前面的一样
   optional Engine engine = 11 [default = DEFAULT];
   // If global_pooling then it will pool over the size of the bottom by doing
   // kernel_h = bottom->height and kernel_w = bottom->width
