@@ -1,4 +1,5 @@
-syntax = "proto2";
+syntax = "proto2";  //指定协议proto2或proto3, caffe中的网络和优化器都是以proto协议的文件储存的。
+// 简单来说proto可看作用于数据收发的、一种优化版的xml。
 
 package caffe;
 
