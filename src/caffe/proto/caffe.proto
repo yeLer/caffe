@@ -1243,22 +1243,30 @@ message PoolingParameter {
   // kernel_h = bottom->height and kernel_w = bottom->width
   optional bool global_pooling = 12 [default = false];
   // How to calculate the output size - using ceil (default) or floor rounding.
+  // 计算输出大小的取整方式
   enum RoundMode {
     CEIL = 0;
     FLOOR = 1;
   }
+  // 池化默认上取整
   optional RoundMode round_mode = 13 [default = CEIL];
 }
 
+// Power层参数
 message PowerParameter {
   // PowerLayer computes outputs y = (shift + scale * x) ^ power.
+  // Power的计算公式为y = (shift + scale * x) ^ power，下面是公式中的参数
   optional float power = 1 [default = 1.0];
   optional float scale = 2 [default = 1.0];
   optional float shift = 3 [default = 0.0];
 }
 
+
+// python layer参数
 message PythonParameter {
+  // python模块名称
   optional string module = 1;
+  // python模块中层的名字，即类名
   optional string layer = 2;
   // This value is set to the attribute `param_str` of the `PythonLayer` object
   // in Python before calling the `setup()` method. This could be a number,
@@ -1266,29 +1274,36 @@ message PythonParameter {
   // string in `setup` method and use it in `forward` and `backward`.
   optional string param_str = 3 [default = ''];
   // DEPRECATED
+  // 是否需要在并行时共享layer，已废弃
   optional bool share_in_parallel = 4 [default = false];
 }
 
 // Message that stores parameters used by RecurrentLayer
+// Recurrent层参数
 message RecurrentParameter {
   // The dimension of the output (and usually hidden state) representation --
   // must be explicitly set to non-zero.
+  // Recurrent层的输出——必须非零
   optional uint32 num_output = 1 [default = 0];
-
+  // 权重初始化，随机生成初始化
   optional FillerParameter weight_filler = 2; // The filler for the weight
+  // 偏置初始化，随机生成
   optional FillerParameter bias_filler = 3; // The filler for the bias
 
   // Whether to enable displaying debug_info in the unrolled recurrent net.
+  // 是否输出调试信息
   optional bool debug_info = 4 [default = false];
 
   // Whether to add as additional inputs (bottoms) the initial hidden state
   // blobs, and add as additional outputs (tops) the final timestep hidden state
   // blobs.  The number of additional bottom/top blobs required depends on the
   // recurrent architecture -- e.g., 1 for RNNs, 2 for LSTMs.
+  // 是否添加额外的输入
   optional bool expose_hidden = 5 [default = false];
 }
 
 // Message that stores parameters used by ReductionLayer
+// Reduction层参数
 message ReductionParameter {
   enum ReductionOp {
     SUM = 1;
@@ -1296,7 +1311,7 @@ message ReductionParameter {
     SUMSQ = 3;
     MEAN = 4;
   }
-
+  // 通过reduction操作来将数据减少到一维，可以通过上面的四种方式
   optional ReductionOp operation = 1 [default = SUM]; // reduction operation
 
   // The first axis to reduce to a scalar -- may be negative to index from the
@@ -1312,27 +1327,33 @@ message ReductionParameter {
   // If axis == 0 (the default), the output Blob always has the empty shape
   // (count 1), performing reduction across the entire input --
   // often useful for creating new loss functions.
+  // 在哪个轴上执行reduction操作
   optional int32 axis = 2 [default = 0];
-
+  // 输出系数
   optional float coeff = 3 [default = 1.0]; // coefficient for output
 }
 
 // Message that stores parameters used by ReLULayer
+// ReLU层参数
 message ReLUParameter {
   // Allow non-zero slope for negative inputs to speed up optimization
   // Described in:
   // Maas, A. L., Hannun, A. Y., & Ng, A. Y. (2013). Rectifier nonlinearities
   // improve neural network acoustic models. In ICML Workshop on Deep Learning
   // for Audio, Speech, and Language Processing.
+  // ReLUU操作的阈值
   optional float negative_slope = 1 [default = 0];
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 执行ReLU操作的类型，与前面的一样
   optional Engine engine = 2 [default = DEFAULT];
 }
 
+
+// Reshape层参数，与numpy中的Reshape作用是一样的
 message ReshapeParameter {
   // Specify the output dimensions. If some of the dimensions are set to 0,
   // the corresponding dimension from the bottom layer is used (unchanged).
@@ -1354,6 +1375,7 @@ message ReshapeParameter {
   //   reshape_param { shape { dim:  0  dim: 2  dim: -1 } }
   //   reshape_param { shape { dim:  0  dim:-1  dim:  4 } }
   //
+  // reshape之后输出的维度
   optional BlobShape shape = 1;
 
   // axis and num_axes control the portion of the bottom blob's shape that are
@@ -1397,6 +1419,7 @@ message ReshapeParameter {
   optional int32 num_axes = 3 [default = -1];
 }
 
+// Scale层参数，与batch norm layer配合使用，可参考Resnet结构
 message ScaleParameter {
   // The first axis of bottom[0] (the first input Blob) along which to apply
   // bottom[1] (the second input Blob).  May be negative to index from the end
@@ -1430,42 +1453,53 @@ message ScaleParameter {
 
   // Whether to also learn a bias (equivalent to a ScaleLayer+BiasLayer, but
   // may be more efficient).  Initialized with bias_filler (defaults to 0).
+  // 是否使用偏置项
   optional bool bias_term = 4 [default = false];
+  // 偏置项初始化
   optional FillerParameter bias_filler = 5;
 }
 
+// Sigmoid层参数
 message SigmoidParameter {
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 使用哪种sigmoid实现
   optional Engine engine = 1 [default = DEFAULT];
 }
 
+// Slice层参数
 message SliceParameter {
   // The axis along which to slice -- may be negative to index from the end
   // (e.g., -1 for the last axis).
   // By default, SliceLayer concatenates blobs along the "channels" axis (1).
+  // 在哪个维度上进行拆分
   optional int32 axis = 3 [default = 1];
-  repeated uint32 slice_point = 2;
+  // 指定拆分点
+  repeated uint32 slice_point = 2;  // 传入参数可以为数组比如[1, 2]
 
   // DEPRECATED: alias for "axis" -- does not support negative indexing.
+  // 已废弃。
   optional uint32 slice_dim = 1 [default = 1];
 }
 
 // Message that stores parameters used by SoftmaxLayer, SoftmaxWithLossLayer
+// Softmax层参数
 message SoftmaxParameter {
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 使用哪种softmax实现
   optional Engine engine = 1 [default = DEFAULT];
 
   // The axis along which to perform the softmax -- may be negative to index
   // from the end (e.g., -1 for the last axis).
   // Any other axes will be evaluated as independent softmaxes.
+  // 在哪个维度上进行softmax
   optional int32 axis = 2 [default = 1];
 }
 
@@ -1478,79 +1512,106 @@ message SwishParameter {
   optional float beta = 1 [default = 1];
 }
 
+// TanH层参数
 message TanHParameter {
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 执行tanh激活函数的类型
   optional Engine engine = 1 [default = DEFAULT];
 }
 
 // Message that stores parameters used by TileLayer
+// Tile层参数，扩大某一维度
 message TileParameter {
   // The index of the axis to tile.
+  // 扩大哪个维度
   optional int32 axis = 1 [default = 1];
 
   // The number of copies (tiles) of the blob to output.
+  // 创建多少个副本
   optional int32 tiles = 2;
 }
 
 // Message that stores parameters used by ThresholdLayer
+// Threshold层参数，主要用来测试输入是否超过阈值
 message ThresholdParameter {
+  // 设置阈值
   optional float threshold = 1 [default = 0]; // Strictly positive values
 }
 
+
+// WindowData层参数
 message WindowDataParameter {
   // Specify the data source.
+  // 指定数据源
   optional string source = 1;
   // For data pre-processing, we can do simple scaling and subtracting the
   // data mean, if provided. Note that the mean subtraction is always carried
   // out before scaling.
+  // 是否归一化
   optional float scale = 2 [default = 1];
+  // 图像均值文件
   optional string mean_file = 3;
   // Specify the batch size.
+  // 训练的batch_size
   optional uint32 batch_size = 4;
   // Specify if we would like to randomly crop an image.
+  // 是否随机crop
   optional uint32 crop_size = 5 [default = 0];
   // Specify if we want to randomly mirror data.
+  // 是否随机mirror
   optional bool mirror = 6 [default = false];
   // Foreground (object) overlap threshold
+  // 前景重叠阈值
   optional float fg_threshold = 7 [default = 0.5];
   // Background (non-object) overlap threshold
+  // 背景重叠阈值
   optional float bg_threshold = 8 [default = 0.5];
   // Fraction of batch that should be foreground objects
+  // 前景比例
   optional float fg_fraction = 9 [default = 0.25];
   // Amount of contextual padding to add around a window
   // (used only by the window_data_layer)
+  // 是否padding
   optional uint32 context_pad = 10 [default = 0];
   // Mode for cropping out a detection window
   // warp: cropped window is warped to a fixed size and aspect ratio
   // square: the tightest square around the window is cropped
+  // crop的方式
   optional string crop_mode = 11 [default = "warp"];
   // cache_images: will load all images in memory for faster access
+  // 是否缓存图像，即将图像都转入内存
   optional bool cache_images = 12 [default = false];
   // append root_folder to locate images
+  // 图像文件的根目录
   optional string root_folder = 13 [default = ""];
 }
 
+// SPP层参数，SPP是spatial pyramid pooling，空间金字塔池化
 message SPPParameter {
   enum PoolMethod {
     MAX = 0;
     AVE = 1;
     STOCHASTIC = 2;
   }
+  // 空间金字塔高度
   optional uint32 pyramid_height = 1;
+  // 池化方法
   optional PoolMethod pool = 2 [default = MAX]; // The pooling method
   enum Engine {
     DEFAULT = 0;
     CAFFE = 1;
     CUDNN = 2;
   }
+  // 执行SPP的方式
   optional Engine engine = 6 [default = DEFAULT];
 }
 
 // DEPRECATED: use LayerParameter.
+// 已废弃，使用LayerParameter。
 message V1LayerParameter {
   repeated string bottom = 2;
   repeated string top = 3;
@@ -1645,6 +1706,7 @@ message V1LayerParameter {
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters
 // in Caffe.  We keep this message type around for legacy support.
+// 已废弃。
 message V0LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the string to specify the layer type
@@ -1737,12 +1799,15 @@ message V0LayerParameter {
   optional HDF5OutputParameter hdf5_output_param = 1001;
 }
 
+// PReLU层参数，ReLU的进化版本
 message PReLUParameter {
   // Parametric ReLU described in K. He et al, Delving Deep into Rectifiers:
   // Surpassing Human-Level Performance on ImageNet Classification, 2015.
 
   // Initial value of a_i. Default is a_i=0.25 for all i.
+  // 参数初始化
   optional FillerParameter filler = 1;
   // Whether or not slope parameters are shared across channels.
+  // 是否在各通道共享参数
   optional bool channel_shared = 2 [default = false];
 }
