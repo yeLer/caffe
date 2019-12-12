@@ -9,16 +9,23 @@ namespace caffe {
 template <typename Dtype>
 void BatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  // 获取BatchNormParameter参数列表
   BatchNormParameter param = this->layer_param_.batch_norm_param();
+  // 得到moving_average_fraction参数
   moving_average_fraction_ = param.moving_average_fraction();
+  // 赋值use_global_stats_，如果为Test，则为True
   use_global_stats_ = this->phase_ == TEST;
+  // 如果参数列表里面定义了use_global_stats，那么从参数列表里面获取
   if (param.has_use_global_stats())
     use_global_stats_ = param.use_global_stats();
+  //  计算channels_
   if (bottom[0]->num_axes() == 1)
     channels_ = 1;
   else
     channels_ = bottom[0]->shape(1);
+  // 从参数列表里面获取eps小量
   eps_ = param.eps();
+  // 初始化三个blob，其中前两个blob的大小为channels_，第三个blob的大小为1.
   if (this->blobs_.size() > 0) {
     LOG(INFO) << "Skipping parameter initialization";
   } else {
@@ -29,6 +36,7 @@ void BatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     this->blobs_[1].reset(new Blob<Dtype>(sz));
     sz[0] = 1;
     this->blobs_[2].reset(new Blob<Dtype>(sz));
+    // 初始化三个Blob的值为0
     for (int i = 0; i < 3; ++i) {
       caffe_set(this->blobs_[i]->count(), Dtype(0),
                 this->blobs_[i]->mutable_cpu_data());
@@ -36,6 +44,7 @@ void BatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
   // Mask statistics from optimization by setting local learning rates
   // for mean, variance, and the bias correction to zero.
+  // 分别存放均值、方差、偏置
   for (int i = 0; i < this->blobs_.size(); ++i) {
     if (this->layer_param_.param_size() == i) {
       ParamSpec* fixed_param_spec = this->layer_param_.add_param();
