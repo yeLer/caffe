@@ -8,7 +8,18 @@
 #include "caffe/util/rng.hpp"
 
 namespace caffe {
+/*
+* 矩阵与矩阵的乘法，分为双精度的cblas_dgemm和单精度的cblas_sgemm，两个函数的参数意义一样，只是类型不一样
+* 运算式：C=alpha*A*B+beta*C 
+* 一般取alpha=1.0，beta=0.0 即计算式：C=A*B
+* cblas_sgemm(CblasRowMajor, CblasNoTrans,CblasNoTrans,M,N,K,alpha,A,A的列数,B,B的列数,beta,C,C的列数)
+* CblasRowMajor表示数组时行为主，相应矩阵大小为(M*K)乘以(K*N)，可以得到M，K，N的值
 
+* 前面的CblasNoTrans表示A是否转置，后面表示B是否转置，即可以表示A(T)*B=C或者A*B(T)=C或者A(T)*B(T)=C，
+* 如果是A的转置乘以B，M，N是A的转置的行数和列数
+
+* 下面是两种重载形式，分别针对float、double的数据类型
+*/
 template<>
 void caffe_cpu_gemm<float>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
@@ -31,6 +42,11 @@ void caffe_cpu_gemm<double>(const CBLAS_TRANSPOSE TransA,
       ldb, beta, C, N);
 }
 
+// y=alpha*A*x+beta*y
+// 其中X和Y是向量，A 是矩阵
+// M：A 的行数
+// N：A 的列数
+// cblas_sgemv 中的 参数1 表示对X和Y的每个元素都进行操作
 template <>
 void caffe_cpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
@@ -44,7 +60,9 @@ void caffe_cpu_gemv<double>(const CBLAS_TRANSPOSE TransA, const int M,
     const double beta, double* y) {
   cblas_dgemv(CblasRowMajor, TransA, M, N, alpha, A, N, x, 1, beta, y, 1);
 }
-
+    
+// 功能： Y=alpha*X+Y
+// N：为X和Y中element的个数
 template <>
 void caffe_axpy<float>(const int N, const float alpha, const float* X,
     float* Y) { cblas_saxpy(N, alpha, X, 1, Y, 1); }
@@ -52,10 +70,14 @@ void caffe_axpy<float>(const int N, const float alpha, const float* X,
 template <>
 void caffe_axpy<double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
-
+    
+// 功能：用常数 alpha 对 Y 进行初始化
+// 函数 void *memset(void *buffer, char c, unsigned count) 一般为新申请的内存做初始化，
+// 功能是将buffer所指向内存中的每个字节的内容全部设置为c指定的ASCII值, count为块的大小
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
+    // memset() 是char型初始化函数
     memset(Y, 0, sizeof(Dtype) * N);  // NOLINT(caffe/alt_fn)
     return;
   }
@@ -67,7 +89,8 @@ void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
 template void caffe_set<int>(const int N, const int alpha, int* Y);
 template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
-
+    
+// 功能： 给 Y 的每个 element 加上常数 alpha
 template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {
   for (int i = 0; i < N; ++i) {
@@ -81,10 +104,15 @@ void caffe_add_scalar(const int N, const double alpha, double* Y) {
     Y[i] += alpha;
   }
 }
-
+    
+// 从X中拷贝前N个元素到Y中
+// 函数 void *memcpy(void *dest, void *src, unsigned int count) 把src所指向的内存区域
+// copy到dest所指向的内存区域, count为块的大小
 template <typename Dtype>
 void caffe_copy(const int N, const Dtype* X, Dtype* Y) {
+  // 在XY不是同一个指针的情况下执行拷贝操作
   if (X != Y) {
+    // 在模式为GPU的情况下，编译caffe没有使用CPU_ONLY，使用cuda实现的内存拷贝
     if (Caffe::mode() == Caffe::GPU) {
 #ifndef CPU_ONLY
       // NOLINT_NEXT_LINE(caffe/alt_fn)
@@ -108,12 +136,15 @@ template <>
 void caffe_scal<float>(const int N, const float alpha, float *X) {
   cblas_sscal(N, alpha, X, 1);
 }
-
+    
+// X = alpha*X
+// N： X中element的个数
 template <>
 void caffe_scal<double>(const int N, const double alpha, double *X) {
   cblas_dscal(N, alpha, X, 1);
 }
-
+    
+// Y=alpha*X+beta*Y
 template <>
 void caffe_cpu_axpby<float>(const int N, const float alpha, const float* X,
                             const float beta, float* Y) {
@@ -125,7 +156,8 @@ void caffe_cpu_axpby<double>(const int N, const double alpha, const double* X,
                              const double beta, double* Y) {
   cblas_daxpby(N, alpha, X, 1, beta, Y, 1);
 }
-
+    
+// 分别实现element-wise的加减乘除（y[i] = a[i] + - * \ b[i]）
 template <>
 void caffe_add<float>(const int n, const float* a, const float* b,
     float* y) {
@@ -173,7 +205,8 @@ void caffe_div<double>(const int n, const double* a, const double* b,
     double* y) {
   vdDiv(n, a, b, y);
 }
-
+    
+// 同样是element-wise操作，分别是y[i] = a[i] ^ b， y[i] = a[i]^2，y[i] = exp(a[i] )，y[i] = |a[i]|
 template <>
 void caffe_powx<float>(const int n, const float* a, const float b,
     float* y) {
@@ -235,17 +268,20 @@ template <>
 void caffe_abs<double>(const int n, const double* a, double* y) {
     vdAbs(n, a, y);
 }
-
+    
+// 返回一个unsignedint类型的随机数
 unsigned int caffe_rng_rand() {
   return (*caffe_rng())();
 }
-
+    
+// 在最大方向上，返回b可以表示的最接近的数值
 template <typename Dtype>
 Dtype caffe_nextafter(const Dtype b) {
   return boost::math::nextafter<Dtype>(
       b, std::numeric_limits<Dtype>::max());
 }
 
+// 产生指定范围内的均匀分布随机数
 template
 float caffe_nextafter(const float b);
 
@@ -272,7 +308,7 @@ void caffe_rng_uniform<float>(const int n, const float a, const float b,
 template
 void caffe_rng_uniform<double>(const int n, const double a, const double b,
                                double* r);
-
+// 产生高斯分布随机数
 template <typename Dtype>
 void caffe_rng_gaussian(const int n, const Dtype a,
                         const Dtype sigma, Dtype* r) {
@@ -294,7 +330,7 @@ void caffe_rng_gaussian<float>(const int n, const float mu,
 template
 void caffe_rng_gaussian<double>(const int n, const double mu,
                                 const double sigma, double* r);
-
+// 产生伯努利分布随机数
 template <typename Dtype>
 void caffe_rng_bernoulli(const int n, const Dtype p, int* r) {
   CHECK_GE(n, 0);
@@ -346,7 +382,7 @@ double caffe_cpu_strided_dot<double>(const int n, const double* x,
     const int incx, const double* y, const int incy) {
   return cblas_ddot(n, x, incx, y, incy);
 }
-
+// 计算步长为1的内积
 template <typename Dtype>
 Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
   return caffe_cpu_strided_dot(n, x, 1, y, 1);
@@ -357,7 +393,8 @@ float caffe_cpu_dot<float>(const int n, const float* x, const float* y);
 
 template
 double caffe_cpu_dot<double>(const int n, const double* x, const double* y);
-
+    
+// 计算向量x中前n个元素的绝对值之和
 template <>
 float caffe_cpu_asum<float>(const int n, const float* x) {
   return cblas_sasum(n, x, 1);
@@ -367,7 +404,8 @@ template <>
 double caffe_cpu_asum<double>(const int n, const double* x) {
   return cblas_dasum(n, x, 1);
 }
-
+    
+// Y=alpha*X
 template <>
 void caffe_cpu_scale<float>(const int n, const float alpha, const float *x,
                             float* y) {
