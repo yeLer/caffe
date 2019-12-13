@@ -1,6 +1,7 @@
 #ifndef CAFFE_UTIL_MKL_ALTERNATE_H_
 #define CAFFE_UTIL_MKL_ALTERNATE_H_
 
+// 是否定义使用MKL, 如果在安装caffe中的Makefile.configure中指定，则将mkl.h包含
 #ifdef USE_MKL
 
 #include <mkl.h>
@@ -9,12 +10,24 @@
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
-#else
+#else  // 在默认的情况下使用OpenBLAS分支
 extern "C" {
 #include <cblas.h>
 }
 #endif  // USE_ACCELERATE
+/*
+* (1)、定义了一些宏：
 
+* DEFINE_VSL_UNARY_FUNC：一元函数，包括Sqr、Exp、Ln、Abs，对应的函数为vsSqr、vsExp、vsLn、vsAbs、vdSqr、vdExp、vdLn、vdAbs，
+* 支持float和double类型。
+
+* DEFINE_VSL_UNARY_FUNC_WITH_PARAM：带一个参数的一元函数，包括Powx，对应的函数为vsPowx、vdPowx，支持float和double类型。
+
+* DEFINE_VSL_BINARY_FUNC：二元函数，包括Add、Sub、Mul、Div，对应的函数为vsAdd、vsSub、vsMul、vsDiv、vdAdd、vdSub、vdMul、vdDiv，
+* 支持float和double类型。
+
+* (2)、定义了axpby函数，支持两种类型，cblas_saxpby、cblas_daxpby，如果设置incX和incY为1(即步长为1)，则：Y=alpha*X+beta*Y
+*/
 #include <math.h>
 
 // Functions that caffe uses but are not present if MKL is not linked.
