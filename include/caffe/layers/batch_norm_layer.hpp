@@ -25,6 +25,11 @@ namespace caffe {
  * use_global_stats option. For reference, these statistics are kept in the
  * layer's three blobs: (0) mean, (1) variance, and (2) moving average factor.
  *
+ * 默认情况下，在训练期间，网络通过运行平均值计算全局均值/方差统计信息，然后在测试时
+ * 使用该统计信息，以便为每个输入提供确定的输出。 您可以通过use_global_stats选项手动
+ * 切换网络是累积网络还是使用统计信息。 作为参考，这些统计信息保存在图层的三个Blob中：
+ *（0）平均值，（1）方差和（2）移动平均因子。
+ *
  * Note that the original paper also included a per-channel learned bias and
  * scaling factor. To implement this in Caffe, define a `ScaleLayer` configured
  * with `bias_term: true` after each `BatchNormLayer` to handle both the bias
