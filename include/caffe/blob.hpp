@@ -8,7 +8,13 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/syncedmem.hpp"
+/*
+* Blob这个类，Blob是作为Caffe中数据流通的一个基本类，网络各层之间的数据是通过Blob来传递的。
+* 这里整个代码是非常规范的，基本上条件编译，命名空间，模板类，各种不太经常看到的关键字如exlicit,inline等等。
 
+* 首先提一下explicit关键字的作用是禁止单参数构造函数的隐式转换，具体含义谷歌即可。还有inline的作用，
+* iniline主要是将代码进行复制，扩充，会使代码总量上升，好处就是可以节省调用的开销，能提高执行效率。
+*/
 const int kMaxBlobAxes = 32;
 
 namespace caffe {
@@ -29,6 +35,7 @@ class Blob {
   /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
   explicit Blob(const int num, const int channels, const int height,
       const int width);
+  // 其中Blob作为一个最基础的类，其中构造函数开辟一个内存空间来存储数据
   explicit Blob(const vector<int>& shape);
 
   /// @brief Deprecated; use <code>Reshape(const vector<int>& shape)</code>.
@@ -48,6 +55,7 @@ class Blob {
    * an error; either Net::Forward or Net::Reshape need to be called to
    * propagate the new input shape to higher layers.
    */
+  // Reshape函数在Layer中的reshape或者forward操作中来adjust dimension
   void Reshape(const vector<int>& shape);
   void Reshape(const BlobShape& shape);
   void ReshapeLike(const Blob& other);
@@ -267,11 +275,16 @@ class Blob {
   bool ShapeEquals(const BlobProto& other);
 
  protected:
-  shared_ptr<SyncedMemory> data_;
+  // 首先是data_指针，指针类型是shared_ptr，属于boost库的一个智能指针，这一部分主要用来申请内存存储data，data主要是正向传播的时候用的。
+  shared_ptr<SyncedMemory> data_; 
+  // diff_主要用来存储偏差，update data
   shared_ptr<SyncedMemory> diff_;
+  // shape_data和shape_都是存储Blob的形状，一个是老版本一个是新版本。
   shared_ptr<SyncedMemory> shape_data_;
   vector<int> shape_;
+  // count表示Blob中的元素个数，也就是nums*channels*height*width   即个数*通道数*高度*宽度
   int count_;
+  // capacity表示当前的元素个数，因为Blob可能会reshape。
   int capacity_;
 
   DISABLE_COPY_AND_ASSIGN(Blob);
